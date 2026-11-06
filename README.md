@@ -1,37 +1,24 @@
 # stream
 
-`no_std`, dependency-free safe SPSC ring snapshot extracted from
-[`anreonyr/sqware`](https://github.com/anreonyr/sqware.git) at commit
-`68e7afb7416f8008d5ed39cbc1daa53aa2b5d087` (public source branch
-`codex/shuyra-ipc-extraction`, PR38). The local extraction branch is
-`codex/shuyra-stream-extraction`; the full history remains in the original
-repository.
+Shuyra 的 `no_std`、无外部依赖的单生产者/单消费者环形缓冲机制。
+`src/lib.rs` 定义共享 Header、原子字节环、读写结果与关闭操作，并包含宿主测试。
 
-## Contents
+调用者负责存储、映射、端点生命周期、唤醒、调度与重试。
+读写允许部分进展与 Pending；写端关闭后读端排空返回 EOF，读端关闭后写入返回 BrokenPipe。
+这是一项库机制，不能单独作为端点或服务运行。
 
-- `src/lib.rs` — the 279-line production file, byte-identical to
-  `crates/stream/src/lib.rs` at the source commit. Its three inline library
-  tests remain enabled.
-- `Cargo.toml` — explicit `stream` package, version 0.1.0, edition 2024, with an
-  independent `[workspace]` and `resolver = "3"`. No dependencies,
-  dev-dependencies, build script, package rename, or extra unit file.
-- `Cargo.lock` — fresh initial lock for this one-package workspace, not copied
-  from the monorepo.
-- `rust-toolchain.toml` and `.gitignore` — copied from the source root.
+## 工具链与维护
 
-The caller retains storage, mapping, endpoint lifetime, wakeup, scheduling, and
-retry. This provider is only the SPSC header/ring mechanism: a library, not a
-service or a fake endpoint.
-
-## Verification
+使用 `rust-toolchain.toml` 固定的 `nightly-2026-09-04`，首次运行需要 Rustup
+下载工具链及 RV64 目标。依赖版本以 Cargo 清单和锁文件为准。
+下列命令从仓库根目录执行；宿主测试不代表真实内核运行验证。
 
 ```sh
-cargo build --lib --target x86_64-unknown-linux-gnu --locked
 cargo build --lib --target riscv64gc-unknown-none-elf --locked
-cargo build --lib --release --target riscv64gc-unknown-none-elf --locked
 cargo test --target x86_64-unknown-linux-gnu --locked
 ```
 
-The same four commands were repeated with `--locked --offline` after the cache
-was prepared. All eight exited 0; both host test runs reported 3 passed. See
-`PROVENANCE.md` for the source mapping, lock facts, and deferred consumer gate.
+## 贡献与来源
+
+维护与 PR 规则见 [Shuyra 贡献规范](https://github.com/shuyra-arche/vanllia/blob/main/CONTRIBUTING.md)。
+来源、作者与许可情况见 [PROVENANCE.md](PROVENANCE.md)。
